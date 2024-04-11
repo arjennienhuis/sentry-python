@@ -337,6 +337,7 @@ def _wrap_task_call(task, f):
                 op=OP.QUEUE_PROCESS, description=task.name
             ) as span:
                 _set_messaging_destination_name(task, span)
+                span.set_data("messaging.message.retry.count", task.request.retries)
                 return f(*args, **kwargs)
         except Exception:
             exc_info = sys.exc_info()
