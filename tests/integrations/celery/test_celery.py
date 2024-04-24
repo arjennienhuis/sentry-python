@@ -659,3 +659,17 @@ def test_messaging_destination_name_nondefault_exchange(
     (event,) = events
     (span,) = event["spans"]
     assert "messaging.destination.name" not in span["data"]
+
+
+def test_retry_count(init_celery, capture_events):
+    celery = init_celery(enable_tracing=True)
+    events = capture_events()
+
+    @celery.task()
+    def task(): ...
+
+    task.apply_async()
+
+    (event,) = events
+    (span,) = event["spans"]
+    assert span["data"]["messaging.message.retry.count"] == 0
