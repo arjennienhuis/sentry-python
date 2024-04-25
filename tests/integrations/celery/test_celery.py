@@ -661,7 +661,7 @@ def test_messaging_destination_name_nondefault_exchange(
     assert "messaging.destination.name" not in span["data"]
 
 
-def test_retry_count(init_celery, capture_events):
+def test_retry_count_zero(init_celery, capture_events):
     celery = init_celery(enable_tracing=True)
     events = capture_events()
 
@@ -673,3 +673,20 @@ def test_retry_count(init_celery, capture_events):
     (event,) = events
     (span,) = event["spans"]
     assert span["data"]["messaging.message.retry.count"] == 0
+
+
+@mock.patch("celery.app.task.Task.request")
+def test_retry_count_nonzero(mock_request, init_celery, capture_events):
+    mock_request.retries = 3
+
+    celery = init_celery(enable_tracing=True)
+    events = capture_events()
+
+    @celery.task()
+    def task(): ...
+
+    task.apply_async()
+
+    (event,) = events
+    (span,) = event["spans"]
+    assert span["data"]["messaging.message.retry.count"] == 3
