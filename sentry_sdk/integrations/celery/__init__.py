@@ -341,6 +341,11 @@ def _wrap_task_call(task, f):
                     span.set_data("messaging.message.id", task.request.id)
                 with capture_internal_exceptions():
                     span.set_data("messaging.message.retry.count", task.request.retries)
+                with capture_internal_exceptions():
+                    span.set_data(
+                        "messaging.system", task.app.connection().transport.driver_type
+                    )
+
                 return f(*args, **kwargs)
         except Exception:
             exc_info = sys.exc_info()
